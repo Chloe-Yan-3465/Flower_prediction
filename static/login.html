@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <style>
+        body {
+            font-family: "Segoe UI";
+            background: linear-gradient(to right, #89f7fe, #66a6ff);
+            text-align: center;
+            padding: 120px;
+        }
+
+        .card {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            width: 400px;
+            margin: auto;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        input,
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #4facfe;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>🔐 用户登录</h2>
+        <input type="text" id="userid" placeholder="请输入用户ID">
+        <button onclick="login()">进入系统</button>
+    </div>
+
+    <script>
+        function login() {
+            const userId = document.getElementById("userid").value;
+            if (!userId) {
+                alert("请输入用户ID");
+                return;
+            }
+
+            // 简单存储
+            localStorage.setItem("userId", userId);
+
+            // 跳转
+            window.location.href = "/index.html";
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>花期预测</title>
+    <style>
+        body {
+            font-family: "Segoe UI";
+            background: linear-gradient(to right, #fceabb, #f8b500);
+            padding: 60px;
+            font-size: 18px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 500px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 520px;
+        }
+
+        .image-card {
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-card img {
+            width: 100%;
+            border-radius: 15px;
+            margin-top: 10px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-card h3,
+        .result-card h3 {
+            margin: 0 0 10px 0;
+        }
+
+        /* 三个子卡片 */
+        .sub-box {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .sub-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        select,
+        input,
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 18px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #ff7e5f;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #eee;
+            border-top: 5px solid #1f1e1e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- 左侧 -->
+        <div class="card">
+            <h2>🌸 应知时花期预测软件</h2>
+
+            <label>🌸 花卉类型</label>
+            <select id="flower">
+                <option>樱花</option>
+                <option>桃花</option>
+                <option>梨花</option>
+                <option>油菜花</option>
+                <option>郁金香</option>
+                <option>杜鹃花</option>
+                <option>牡丹</option>
+                <option>荷花</option>
+                <option>菊花</option>
+                <option>梅花</option>
+            </select>
+
+            <label>🌡️ 平均温度（℃）</label>
+            <input id="temp" type="number" placeholder="例如：18">
+
+            <label>☀️ 日均光照（小时）</label>
+            <input id="sun" type="number" placeholder="例如：6">
+
+            <label>📍 省份</label>
+            <select id="province"></select>
+
+            <label>🏙️ 城市</label>
+            <select id="city"></select>
+
+            <label>📌 区 / 县</label>
+            <select id="district"></select>
+
+            <label>📅 计划赏花时间</label>
+            <select id="month">
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+            </select>
+
+            <button onclick="predict()">开始预测</button>
+        </div>
+
+        <!-- 右侧 -->
+        <div class="right-panel">
+
+            <!-- 图片 -->
+            <div class="image-card">
+                <h3>🌼 花卉展示</h3>
+                <img id="flowerImg" src="" alt="花卉图片">
+            </div>
+
+            <!-- AI结果 -->
+            <div class="result-card">
+                <h3>🤖 应知时模型预测结果</h3>
+
+                <div id="loading" style="display:none;">
+                    <div class="spinner"></div>
+                    <p style="text-align:center;">正在预测花期...</p>
+                </div>
+
+                <!-- 三个输出框 -->
+                <div id="result-box" style="display:none;">
+                    <div class="sub-box">
+                        <div class="sub-title">🌸 花期</div>
+                        <div id="res1"></div>
+                    </div>
+
+                    <div class="sub-box">
+                        <div class="sub-title">📍 推荐景点</div>
+                        <div id="res2"></div>
+                    </div>
+
+                    <div class="sub-box">
+                        <div class="sub-title">🚄 交通建议</div>
+                        <div id="res3"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        let regionData = {};
+
+        window.onload = function () {
+            const user = localStorage.getItem("userId");
+            if (!user) {
+                window.location.href = "login.html";
+            }
+        };
+
+        async function predict() {
+            const flower = document.getElementById("flower").value;
+            const temp = document.getElementById("temp").value;
+            const sun = document.getElementById("sun").value;
+
+            const province = document.getElementById("province").value;
+            const city = document.getElementById("city").value;
+            const district = document.getElementById("district").value;
+            const month = document.getElementById("month").value;
+
+            const location = province + "-" + city + "-" + district;
+
+            const loading = document.getElementById("loading");
+            const box = document.getElementById("result-box");
+
+            loading.style.display = "block";
+            box.style.display = "none";
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        flower,
+                        location,
+                        month,
+                        temp,
+                        sun
+                    })
+                });
+
+                const data = await response.json();
+
+                // ✅ 拆分三行
+                const lines = data.result.split("\n");
+
+                document.getElementById("res1").innerText = lines[0] || "";
+                document.getElementById("res2").innerText = lines[1] || "";
+                document.getElementById("res3").innerText = lines[2] || "";
+
+                box.style.display = "block";
+
+                // 图片路径
+                document.getElementById("flowerImg").src =
+                    "/image/" + flower + "1.jpg";
+
+            } catch (error) {
+                document.getElementById("res1").innerText = "请求失败";
+                box.style.display = "block";
+            }
+
+            loading.style.display = "none";
+        }
+
+        async function initRegion() {
+            const response = await fetch("static/region_data.json");
+            regionData = await response.json();
+
+            const province = document.getElementById("province");
+
+            for (let p in regionData) {
+                province.add(new Option(p, p));
+            }
+
+            updateCity();
+        }
+
+        function updateCity() {
+            const province = document.getElementById("province").value;
+            const city = document.getElementById("city");
+
+            city.innerHTML = "";
+
+            for (let c in regionData[province]) {
+                city.add(new Option(c, c));
+            }
+
+            updateDistrict();
+        }
+
+        function updateDistrict() {
+            const province = document.getElementById("province").value;
+            const city = document.getElementById("city").value;
+            const district = document.getElementById("district");
+
+            district.innerHTML = "";
+
+            regionData[province][city].forEach(d => {
+                district.add(new Option(d, d));
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initRegion();
+            document.getElementById("province").addEventListener("change", updateCity);
+            document.getElementById("city").addEventListener("change", updateDistrict);
+        });
+
+    </script>
+
+</body>
+
+</html>
